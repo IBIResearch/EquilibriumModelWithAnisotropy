@@ -82,13 +82,13 @@ function simulateAndPlot(dataset, datasetName, D, kAnis, kAnisγ, dfAmplitude, s
     sms = deserialize(filenameSM)
   else
     p[:model] = EquilibriumModel()
-    smEq = MPIReco.calcSM(p)
+    smEq = calcSM(p)
     p[:model] = EquilibriumAnisModel()
-    smEqAnis = MPIReco.calcSM(p)
+    smEqAnis = calcSM(p)
     p[:model] = FokkerPlanckModel()
-    smFP = MPIReco.calcSM(p)
+    smFP = calcSM(p)
 
-    smsEqAnisRed = MPIReco.calcSM(p, chebyshev=true)
+    smsEqAnisRed = calcSM(p, chebyshev=true)
 
     sms = Dict{Symbol,Any}()
     sms[:Eq] = smEq
