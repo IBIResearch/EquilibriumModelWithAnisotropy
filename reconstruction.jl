@@ -75,7 +75,9 @@ for (i,S) in enumerate(SCorr_)
   end
 end
 
-fig = Figure( size = (600, 600*(length(SCorr_)+1)/length(bs)), figure_padding = 1 )
+include("masken.jl")
+
+fig = Figure( size = (600, 600*(2*length(SCorr_)+2)/length(bs)), figure_padding = 1 )
 
 fnPhotos = joinpath.(mdfdatadir, ["photos/Snail.jpg", "photos/Resolution1.jpg", 
    "photos/Resolution2.jpg", "photos/Resolution3.jpg", "photos/IceCream.jpg", "photos/Dot.jpg"])
@@ -102,10 +104,21 @@ for (l,fn) in enumerate(fnPhotos)
   end
 end
 
+for (l,fn) in enumerate(fnPhotos)
+  ax = CairoMakie.Axis(fig[2, l], ylabel="", 
+      xticklabelsvisible=false, xticksvisible=false)
+
+  A = DIE_MASKE[l]
+
+  CairoMakie.heatmap!(ax, A, colormap=:inferno, colorrange=(0,1) )
+  hidedecorations!(ax, grid=false, label=false)
+  tightlimits!(ax)
+
+end
 
 for (i,S) in enumerate(SCorr_)
   for (l,b) in enumerate(bs)
-    ax = CairoMakie.Axis(fig[i+1, l], ylabel="", 
+    ax = CairoMakie.Axis(fig[2*i+1, l], ylabel="", 
         xticklabelsvisible=false, xticksvisible=false)
 
     A = reverse(squeeze(sum(c_[l,i],dims=3))',dims=2)
@@ -115,6 +128,17 @@ for (i,S) in enumerate(SCorr_)
     CairoMakie.heatmap!(ax, A, colormap=:inferno, colorrange=cr)  
     hidedecorations!(ax, grid=false, label=false)
     tightlimits!(ax)
+
+    axDiff = CairoMakie.Axis(fig[2*i+2, l], ylabel="", 
+        xticklabelsvisible=false, xticksvisible=false)
+
+    D = A - DIE_MASKE[l]
+
+    cr = (-maximum(DIE_MASKE[l]),maximum(DIE_MASKE[l]))
+
+    CairoMakie.heatmap!(axDiff, D, colormap=:bam, colorrange=cr)  # hier brauchen wir noch eine besser colormap
+    hidedecorations!(axDiff, grid=false, label=false)
+    tightlimits!(axDiff)
   end
 end
 
@@ -125,9 +149,9 @@ for l=1:length(strDataset)
 end
 
 strModels = string.(models)
-strModels = ["FP", "EQANIS", "red. EQANIS", "EQ"]
+strModels = ["FP", "Diff", "EQANIS", "Diff", "red. EQANIS", "Diff", "EQ", "Diff"]
 
-prepend!(strModels, ["Photo", "Measured"])
+prepend!(strModels, ["Photo", "Masks", "Measured", "Diff"])
 
 for l=1:length(strModels)
   Label(fig[l, 1, Left()], strModels[l], halign = :left, font = :bold, 
@@ -138,5 +162,8 @@ rowgap!(fig.layout, 5)
 colgap!(fig.layout, 5)
 
 save(joinpath(imgdir,"reco.pdf"), fig)
+
+#error
+vcat([MPIReco.nrmsd(P_spiral_O,c_[1,x][:,:,1]) for x=1:5]',[MPIReco.nrmsd(P_aufl1_O,c_[2,x][:,:,1]) for x=1:5]',[MPIReco.nrmsd(P_aufl2_O,c_[3,x][:,:,1]) for x=1:5]',[MPIReco.nrmsd(P_aufl3_O,c_[4,x][:,:,1]) for x=1:5]',[MPIReco.nrmsd(P_ICE_O,c_[5,x][:,:,1]) for x=1:5]',[MPIReco.nrmsd(P_dot_O,c_[6,x][:,:,1]) for x=1:5]')'
 
 
