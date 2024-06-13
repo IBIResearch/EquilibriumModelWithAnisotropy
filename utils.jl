@@ -77,3 +77,17 @@ colors = [(0/255,73/255,146/255), # blue
           (104/255,195/255,205/255),# "TUHH"
           (45/255,198/255,214/255), #  TUHH
           (193/255,216/255,237/255)]
+
+
+function meshgrid(x, y)
+  X = [x for _ in y, x in x]
+  Y = [y for y in y, _ in x]
+  X, Y
+end
+
+function meshgrid(x, y, z)
+  X = [x for _ in z, _ in y, x in x]
+  Y = [y for _ in z, y in y, _ in x]
+  Z = [z for _ in z, y in y, _ in x]
+  X, Y, Z
+end

@@ -53,12 +53,6 @@ function calcSM(params; chebyshev=false)
   return sm
 end
 
-function meshgrid(x, y)
-  X = [x for _ in y, x in x]
-  Y = [y for y in y, _ in x]
-  X, Y
-end
-
 function calcSMReducedEq(params, BSM, tSM, offsets)
   
   amplitude = params[:amplitude]
