@@ -118,7 +118,7 @@ for (i,S) in enumerate(SCorr_)
   end
 end
 
-strDataset = ["Snail", "Resolution 1", "Resolution 2", "Resolution 3", "Ice Cream", "Dot"]
+strDataset = ["Snake", "Resolution 1", "Resolution 2", "Resolution 3", "Ice Cream", "Dot"]
 for l=1:length(strDataset)
   Label(fig[1, l, Top()], strDataset[l], valign = :bottom, font = :bold, 
        padding = (0, 0, 5, 0))
