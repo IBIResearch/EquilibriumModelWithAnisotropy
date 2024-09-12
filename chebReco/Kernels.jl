@@ -59,7 +59,7 @@ function DCR2_generate_kernels(params, shape, basistype="UU" )
     global Kern_x = LangDx_x.(params[:gradient][1]*beta*vec(X2), params[:gradient][2]*beta*vec(Y2));
     Kern_x = reshape(Kern_x, n_kern[1:2]... );
 
-    global Kern_y = LangDx_x.(params[:gradient][2]*beta*vec(Y2), params[:gradient][1]*beta*vec(X2));
+    global Kern_y = LangDx_y.(params[:gradient][2]*beta*vec(Y2), params[:gradient][1]*beta*vec(X2));
     Kern_y = reshape(Kern_y, n_kern[1:2]... );
 
     return Kern_x, Kern_y
