@@ -13,10 +13,10 @@ function DCR2_generate_kernels(params, shape, basistype="UU" )
 
 
   area = params[:amplitude] ./ params[:gradient]   #0.012
-
-  n_kern = 2 .* shape ;
-  x2 = range(-2*area[1],2*area[1], length=n_kern[1] ); # larger evaluation of kernel to avoid artifacts
-  y2 = range(-2*area[2],2*area[2], length=n_kern[2] );
+  enlargementFactor = 2
+  n_kern = (enlargementFactor) .* (shape.-1).+1;
+  x2 = range(-enlargementFactor*area[1],enlargementFactor*area[1], length=n_kern[1] ); # larger evaluation of kernel to avoid artifacts
+  y2 = range(-enlargementFactor*area[2],enlargementFactor*area[2], length=n_kern[2] );
   X2,Y2 = meshgrid(x2,y2);
 
   if basistype == "UU"
@@ -47,19 +47,14 @@ function DCR2_generate_kernels(params, shape, basistype="UU" )
                 coth(sqrt(x^2 + y^2)) + x^2 * (-(x^2 + y^2)) * csch(sqrt(x^2 + y^2))^2 + x^2 - y^2)/(x^2 + y^2)^2;
       end
     end
-    function LangDx_y(x,y) 
-      if abs(x) < eps() && abs(y) < eps()
-        return 0
-      else
-        return ( -x*y *( sqrt(x^2 + y^2) * 
-                coth(sqrt(x^2 + y^2)) +  (x^2 + y^2) * csch(sqrt(x^2 + y^2))^2 - 2))/(x^2 + y^2)^2;
-      end
+    function LangDy_y(x,y) 
+      return LangDx_x(y,x)
     end
 
     global Kern_x = LangDx_x.(params[:gradient][1]*beta*vec(X2), params[:gradient][2]*beta*vec(Y2));
     Kern_x = reshape(Kern_x, n_kern[1:2]... );
 
-    global Kern_y = LangDx_y.(params[:gradient][2]*beta*vec(Y2), params[:gradient][1]*beta*vec(X2));
+    global Kern_y = LangDy_y.( params[:gradient][1]*beta*vec(X2),params[:gradient][2]*beta*vec(Y2));
     Kern_y = reshape(Kern_y, n_kern[1:2]... );
 
     return Kern_x, Kern_y
@@ -78,8 +73,9 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
   offsets = vec([ gradient.*Tuple(x)  for x in grid ])
 
   factor = params[:kAnis]
+  kAnisγ = params[:kAnisγ]
   maxOff = maximum(norm.(offsets))
-  anisotropyAxis = vec([ (factor./maxOff).*gradient.*(-x[1],x[2],x[3])  for x in grid ])
+  anisotropyAxis = vec([ (1.0./maxOff).*gradient.*(x[1],x[2],x[3])  for x in grid ])
 
   #drive-field has cosine-excitation, otherwise sine-excitation
   isCosine = true;
@@ -113,14 +109,15 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
   
   
   nEasy_H_S = collect([ (norm(x) > 0 ? x[d]./norm(x) : (d==1)) for x in anisotropyAxis, d=1:3]')
-  g_Aniso = norm.(anisotropyAxis)
+  g_Aniso = factor.*(norm.(anisotropyAxis)).^kAnisγ
   
+  enlargeFactor = 2
   
-  shape_ = 2 .* shape 
+  shape_ = enlargeFactor .* (shape.-1).+1 
   
   #Create a Chebyshev grid around each sampling grid point.
-  xk = 4.0*Ax./GradStrx.*(((0:shape_[1]) )./shape_[1] .-1/2);
-  yk = 4.0*Ay./GradStry.*(((0:shape_[2]) )./shape_[2] .-1/2);
+  xk = enlargeFactor.*2.0*Ax./GradStrx.*(((-1:(shape_[1].-1)).+1/2 )./(shape_[1].-1) .-1/2);
+  yk = enlargeFactor.*2.0*Ay./GradStry.*(((-1:(shape_[2].-1)).+1/2 )./(shape_[2].-1) .-1/2);
   
   # Coordinates that must be evaluated and padding of K_Aniso and the easy axis
   deltaX, deltaY = meshgrid(xk,yk);
@@ -152,5 +149,5 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
     
   Mag = reshape(Mag,size(X_cords_gauss_quad)..., 3);
 
-  return diff(diff(Mag, dims=1),dims=2), diff(Mag, dims=2)
+  return diff(diff(Mag, dims=1),dims=2), diff(Mag, dims=2), diff(Mag, dims=1)
 end

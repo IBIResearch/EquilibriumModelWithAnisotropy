@@ -12,7 +12,7 @@ tfCorrection = false
 bgCorrection = true
 SMeas = reshape(MPIFiles.getSystemMatrix(bSF; tfCorrection, bgCorrection), N_..., 817, 3)[:,:,slice,:,1:3]
 
-freqs = filterFrequencies(bSF, recChannels = 1:2, minFreq=60e3, maxFreq=450e3)
+freqs = filterFrequencies(bSF, recChannels = 1:2, minFreq=80e3, maxFreq=450e3)
 
 b_bg = MPIFile(joinpath(mdfdatadir, "measurements/20230613_150948_model based fluid/1.mdf"),handleSubPeriodsAsFrames=true) 
 u_bg = getMeasurementsFD(b_bg,numAverages=20, tfCorrection=false)
@@ -33,9 +33,10 @@ p = Dict{Symbol,Any}()
 p[:samplingRate] = 2.5e6
 p[:amplitude] = Tuple(dfStrength(bSF))
 p[:dividers] = (dfDivider(bSF)[1],dfDivider(bSF)[2],1)
-p[:gradient] = Tuple(vec(acqGradientDiag(bSF))) .* (-spatialScaling) 
-p[:DCore] = 20.0e-9 #18.4e-9 #18.402152475061616*1e-9
-p[:kAnis] = 0*2000 #*1800 #900#1800 #0*1835.234880285756 #1835.234880285756
+grad = vec(acqGradientDiag(bSF))
+p[:gradient] = Tuple(grad) .* (-spatialScaling) 
+p[:DCore] = 19.0e-9 #18.4e-9 #18.402152475061616*1e-9
+p[:kAnis] = 2000 #*1800 #900#1800 #0*1835.234880285756 #1835.234880285756
 p[:kAnisγ] = 2.0
 p[:grid] = RegularGridPositions(collect(N), [0.034, 0.034, 0.006], calibFovCenter(bSF))
 #calibFov(bSF), calibFovCenter(bSF))
@@ -45,11 +46,20 @@ smEq = calcSM(p)
 p[:model] = EquilibriumAnisModel()
 #smEqAnis = calcSM(p)
 
-KernelUU_aniso, KernelUT_aniso = DCR2_generate_aniso_kernels(p, (21,21))
+
+
+KernelUU_aniso, KernelUT_aniso_x, KernelUT_aniso_y = DCR2_generate_aniso_kernels(p, (21,21))
+KernelUU_aniso = permutedims(reshape(KernelUU_aniso,(41,41,21,21,3)),(1,2,4,3,5))
+KernelUU_aniso = reshape(KernelUU_aniso,(41,41,21*21,3))
 KernUU_aniso_x = -KernelUU_aniso[:,:,:,1] * 5
 KernUU_aniso_y = -KernelUU_aniso[:,:,:,2] * 5
-KernUT_aniso_x = -KernelUT_aniso[1:end-1,:,:,1] * 5
-KernUT_aniso_y = -permutedims(KernelUT_aniso[1:end-1,:,:,1],(2,1,3)) * 5
+KernelUT_aniso_x = permutedims(reshape(KernelUT_aniso_x,(42,41,21,21,3)),(1,2,4,3,5))
+KernelUT_aniso_x = reshape(KernelUT_aniso_x,(42,41,21*21,3))
+KernUT_aniso_x = -KernelUT_aniso_x[1:end-1,:,:,1] * 5
+
+KernelUT_aniso_y = permutedims(reshape(KernelUT_aniso_y,(41,42,21,21,3)),(1,2,4,3,5))
+KernelUT_aniso_y = reshape(KernelUT_aniso_y,(41,42,21*21,3))
+KernUT_aniso_y = -KernelUT_aniso_y[:,1:end-1,:,2] * 5
 
 #ffn = "../EquilibriumModelPaper/directChebyshevReconstruction/creation_kernel_sys_mat/kernel_anis.h5"
 #KernUU_aniso_x_ = -h5read(ffn, "/kernelx") * 4e12
@@ -107,7 +117,7 @@ for (l,b) in enumerate(bs)
   end 
 
   reko_test_aniso_dir = DCR2_deconvolve_aniso_l2(real(c1), real(c2), 
-     KernUU_aniso_x, KernUU_aniso_y, 10^-1.0, 1,1, "direct");
+     KernUU_aniso_x, KernUU_aniso_y, 10^-2.0, 1,1, "direct");
   #reko_test_aniso_dir = DCR2_deconvolve_aniso_l2(real(c2), real(c2), 
   #   KernUU_aniso_y, KernUU_aniso_y, 10^-1.0, 1,1, "direct");
   
@@ -141,7 +151,7 @@ for (l,b) in enumerate(bs)
   end  
 
   reko_test_aniso_dir = DCR2_deconvolve_aniso_l2(real(c1ut), real(c2ut), 
-     KernUT_aniso_x, KernUT_aniso_y, 10^0.5, 1,1, "direct");
+     KernUT_aniso_x, KernUT_aniso_y, 10^1.0, 1,1, "direct");
   
   ax = CairoMakie.Axis(fig[8, l], ylabel="", xticklabelsvisible=false, xticksvisible=false)
   heatmap!(ax, reverse(real.(reko_test_aniso_dir),dims=2), colormap=:inferno)#,colorrange=crange_)
@@ -175,8 +185,10 @@ fig_,ax,pl = heatmap( reverse(KernUU_x,dims=2), colormap=:inferno, axis=(;title=
 heatmap(fig_[1,2], reverse(KernUU_y,dims=2), colormap=:inferno, axis=(;title="Kern2"))
 heatmap(fig_[1,3], reverse(KernUT_x,dims=2), colormap=:inferno, axis=(;title="Kern2"))
 heatmap(fig_[1,4], reverse(KernUT_y,dims=2), colormap=:inferno, axis=(;title="Kern2"))
-heatmap(fig_[2,1], reverse(KernUU_aniso_x[:,:,20],dims=2), colormap=:inferno, axis=(;title="Kern2"))
-heatmap(fig_[2,2], reverse(KernUU_aniso_y[:,:,20],dims=2), colormap=:inferno, axis=(;title="Kern2"))
+heatmap(fig_[2,1], reverse(KernUU_aniso_x[:,:,353],dims=2), colormap=:inferno, axis=(;title="Kern2"))
+heatmap(fig_[2,2], reverse(KernUU_aniso_y[:,:,353],dims=2), colormap=:inferno, axis=(;title="Kern2"))
+heatmap(fig_[2,3], reverse(KernUT_aniso_x[:,:,353],dims=2), colormap=:inferno, axis=(;title="Kern2"))
+heatmap(fig_[2,4], reverse(KernUT_aniso_y[:,:,353],dims=2), colormap=:inferno, axis=(;title="Kern2"))
 
 save("img/kernel.png", fig_)
 
