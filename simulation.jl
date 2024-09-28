@@ -15,10 +15,15 @@ using LazyArtifacts
 const mdfdatadir = joinpath(artifact"MDFStore")
 @info "The mdf data is located at $mdfdatadir."
 
-const datadir  = mkpath("./data")
-@info "The generated data are located at $datadir."
+if length(ARGS) == 2
+  const datadir = ARGS[1]
+  const imgdir = ARGS[2]
+else
+  const datadir  = mkpath("./data")
+  const imgdir  = mkpath("./img")
+end
 
-const imgdir  = mkpath("./img")
+@info "The generated data are located at $datadir."
 @info "The generated images are located at $imgdir."
 
 include("utils.jl")
@@ -111,8 +116,8 @@ function simulateAndPlot(dataset, datasetName, D, kAnis, kAnisγ, dfAmplitude, s
     :FP_TFMeas => correctTransferFunction(SMeas, sms[:FP], tfMeas, shift, phi) # measured
   )
 
-  plotSMs(SMeas, SCorr, bSF, 1, datasetName, anisotropyAxis)
-  plotSMs(SMeas, SCorr, bSF, 2, datasetName, anisotropyAxis)
+  plotSMs(SMeas, SCorr, bSF, 1, datasetName, anisotropyAxis; imgDir=imgdir)
+  plotSMs(SMeas, SCorr, bSF, 2, datasetName, anisotropyAxis; imgDir=imgdir)
   return SCorr
 end
 

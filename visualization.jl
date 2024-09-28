@@ -58,7 +58,7 @@ end
 
 
 
-function plotSMs(SMeas, SCorr, bSF, rec = 2, filenamePrefix = "SM", anisotropyAxis = nothing)
+function plotSMs(SMeas, SCorr, bSF, rec = 2, filenamePrefix = "SM", anisotropyAxis = nothing; imgDir="./img")
 
   MX = 2:2:9
   MY = 2:2:9
@@ -207,7 +207,7 @@ function plotSMs(SMeas, SCorr, bSF, rec = 2, filenamePrefix = "SM", anisotropyAx
   rowgap!(fig.layout, 10) 
   colgap!(fig.layout, 10)
 
-  save("img/$(filenamePrefix)$(rec).png", fig, px_per_unit = 2, pt_per_unit = 0.25)
-  save("img/$(filenamePrefix)$(rec).pdf", fig, px_per_unit = 2, pt_per_unit = 0.25)
+  save("$imgDir/$(filenamePrefix)$(rec).png", fig, px_per_unit = 2, pt_per_unit = 0.25)
+  save("$imgDir/$(filenamePrefix)$(rec).pdf", fig, px_per_unit = 2, pt_per_unit = 0.25)
 end
 
