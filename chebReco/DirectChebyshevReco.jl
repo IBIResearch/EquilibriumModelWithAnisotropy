@@ -96,21 +96,30 @@ function DCR2(f, freqs, N, Nb, fD, excitation="cos", basistype="UU")
 
 
     # Use tensorproduct of CPs of 1st and 2nd kind
+    
     elseif basistype == "UT"
+      temp = Vector{ComplexF64}(undef,D)
       for d=1:D
         for k in K[d]
-            if all(M[d][k,:].!=0) 
+            
               for x in CartesianIndices(ntuple(d->(1:N[d]), D))
-                temp = 4/2/pi/fD/(-pi^2) *factor/k/excterm.^(round(Int, λ[d][k])+1) * abs(prod(M[d][k,:])) 
+                temp[d] = 4/2/pi/fD/(-pi^2) *factor/k/excterm.^(round(Int, λ[d][k])+1) * abs(M[d][k,d]) 
                 for t=1:D
-                  if t==d
-                    temp *= chebyshevU(abs(M[d][k,t])-1, x_[t][x[D-t+1]])
-                  else
-                    temp *= chebyshevT(abs(M[d][k,t]), x_[t][x[D-t+1]])
+                  if t==d && M[d][k,t]!=0
+                    temp[d] *= chebyshevU(abs(M[d][k,t])-1, x_[t][x[D-t+1]])
+                  end
+                  if t!=d
+                    temp[d] *= chebyshevT(abs(M[d][k,t]), x_[t][x[D-t+1]])
+                    if M[d][k,t]==0
+                      temp[d] = 0 # theoretical, one could use temp[d]*= 0.5 (0.5 due to orthogonal porperties of CP of 1st kind). However, this might produce artifacts
+                    end
                   end
                 end
-                c[x, d] += f[k+1,d]*temp
-            end
+                
+                if M[d][k,d]!=0
+                  c[x, d] += f[k+1,d]*temp[d]
+                end
+            
           end
         end
       end
