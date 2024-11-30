@@ -162,11 +162,18 @@ function plotSMs(SMeas, SCorr, bSF, rec = 2, filenamePrefix = "SM", anisotropyAx
   freq = rxFrequencies(bSF) ./ 1000
   fidx = 1:(div(length(rxFrequencies(bSF)),3))
 
-  CairoMakie.lines!(ax, freq[fidx], energyMeas[1,fidx,rec], color = RGBf(colors[1]...), label = "Measured", linewidth=2 ) 
-  CairoMakie.lines!(ax, freq[fidx], energyFP[1, fidx,rec], color = RGBf(colors[2]...), label = "FP", linewidth=2 ) 
-  CairoMakie.lines!(ax, freq[fidx], energyEqAnis[1,fidx,rec], color = RGBf(colors[3]...), label = "EQANIS", linewidth=2 ) 
-  CairoMakie.lines!(ax, freq[fidx], energyEqAnisRed[1,fidx,rec], color = RGBf(colors[4]...), label = "red. EQANIS", linewidth=2 ) 
-  CairoMakie.lines!(ax, freq[fidx], energyEq[1,fidx,rec], color = RGBf(colors[5]...), label = "EQ", linewidth=2 ) 
+  ls = [:solid, :solid, :dashdot, :dashdotdot, :dot]
+  lw = 3
+  CairoMakie.lines!(ax, freq[fidx], energyMeas[1,fidx,rec], color = RGBf(colors[1]...), 
+                    label = "Measured", linewidth=lw, linestyle = ls[1] ) 
+  CairoMakie.lines!(ax, freq[fidx], energyFP[1, fidx,rec], color = RGBf(colors[2]...), 
+                    label = "FP", linewidth=lw, linestyle = ls[2] ) 
+  CairoMakie.lines!(ax, freq[fidx], energyEqAnis[1,fidx,rec], color = RGBf(colors[3]...), 
+                    label = "EQANIS", linewidth=lw, linestyle = ls[3] ) 
+  CairoMakie.lines!(ax, freq[fidx], energyEqAnisRed[1,fidx,rec], color = RGBf(colors[4]...), 
+                    label = "red. EQANIS", linewidth=lw, linestyle = ls[4] ) 
+  CairoMakie.lines!(ax, freq[fidx], energyEq[1,fidx,rec], color = RGBf(colors[5]...), 
+                    label = "EQ", linewidth=lw, linestyle = ls[5] ) 
 
   CairoMakie.scatter!(ax, freq[freqidx], energyMeas[1,freqidx,rec], color = RGBf(colors[1]...), 
      markersize = 14, marker = :xcross ) 
