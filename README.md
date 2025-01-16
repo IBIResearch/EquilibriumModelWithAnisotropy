@@ -6,9 +6,10 @@ In particular, the equilibrium model with anisotropy is in the focus of this cod
 
 The methods corresponding to this code are described in the associated publication
 
-M. Maass, T. Kluth, C. Droigk, H. Albers, K. Scheffler, A. Mertins, T. Knopp. Equilibrium Model with Anisotropy for Model-Based Reconstruction in Magnetic Particle Imaging, submitted
+M. Maass, T. Kluth, C. Droigk, H. Albers, K. Scheffler, A. Mertins, and T. Knopp. Equilibrium Model with Anisotropy for Model-Based Reconstruction in Magnetic Particle Imaging, IEEE Transactions on Computational Imaging, vol. 10, pp. 1588-1601, 2024.
 
-which is currently in submission.
+Update from 09/01/2025:
+Please note that a bugfix has been made in systemMatrix.jl.  The version corresponding to the article is now labeled “Version_Article” in Git.
 
 ## Installation
 

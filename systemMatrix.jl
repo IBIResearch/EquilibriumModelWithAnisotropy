@@ -31,11 +31,11 @@ function calcSM(params; chebyshev=false)
 
   offsets = vec([ gradient.*Tuple(x)  for x in grid ])
 
-  dirs = vec([ (direction(Tuple(x)).*(norm.(x).^kAnisγ))  for x in grid ])
-  maxDir = maximum(norm.(dirs))
+  dirs = vec([ (direction(Tuple(x)).*(norm(x).^kAnisγ))  for x in grid ])
+  maxDir = maximum(norm.(dirs,Inf))
   
   if anisotropyAxis == nothing
-    anisotropyAxis = vec([ (factor./maxDir).*(direction(Tuple(x)).*(norm.(x).^kAnisγ))  for x in grid ])
+    anisotropyAxis = vec([ (factor./maxDir).*(direction(Tuple(x)).*(norm(x).^kAnisγ))  for x in grid ])
   else
     anisotropyAxis = vec([ Tuple(factor.*anisotropyAxis)  for x in grid ])
   end
