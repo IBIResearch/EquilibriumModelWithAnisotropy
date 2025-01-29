@@ -63,7 +63,7 @@ end
 
 
 
-function DCR2_generate_aniso_kernels(params, shape) #shape
+function DCR2_generate_aniso_kernels(params, shape, split=1) #shape
   
   amplitude = params[:amplitude]
   gradient = params[:gradient] 
@@ -72,19 +72,13 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
 
   offsets = vec([ gradient.*Tuple(x)  for x in grid ])
 
+  numLenGrid = shape[1]*shape[2]
+
   factor = params[:kAnis]
   kAnisγ = params[:kAnisγ]
   maxOff = maximum(norm.(offsets))
   anisotropyAxis = vec([ (1.0./maxOff).*gradient.*(x[1],x[2],x[3])  for x in grid ])
 
-  #drive-field has cosine-excitation, otherwise sine-excitation
-  isCosine = true;
-
-  Xcord, Ycord, Zcord = ([ x[d] for x in grid ] for d=1:3)
-  
-  kB = 1.38064852e-23
-  gamGyro = 1.75*10.0^11
-  μ₀ = 4*π*1e-7 #vacuum permeability
   MS = 474000.0;
   temp = 293.0;
   
@@ -103,7 +97,7 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
  
   
   
-  order = 120; # order factor for truncation of series expansion -> large values could lead to NaNs or Inf.
+  order = params[:order]; # order factor for truncation of series expansion -> large values could lead to NaNs or Inf.
   # small order faster calculation, but lower accuracy
   epsilon = 1e-10; #to avoid divisions by values close to zero in the series expansion
   
@@ -121,31 +115,34 @@ function DCR2_generate_aniso_kernels(params, shape) #shape
   
   # Coordinates that must be evaluated and padding of K_Aniso and the easy axis
   deltaX, deltaY = meshgrid(xk,yk);
-  X_cords_gauss_quad = zeros(length(xk),length(yk),length(Xcord));
-  Y_cords_gauss_quad = zeros(length(xk),length(yk),length(Xcord));
-  Z_cords_gauss_quad = zeros(length(xk),length(yk),length(Xcord));
-  g_aniso_quad = zeros(length(xk),length(yk),length(Xcord));
-  nEasy_quad = zeros(3,length(xk),length(yk),length(Xcord));
-  
-  
-  for i=1:length(Xcord)
-      Xq = 0*Xcord[i].-deltaX;
-      Yq = 0*Ycord[i].-deltaY;
-      Zq = 0*Zcord[i].*ones(size(deltaX));
-      X_cords_gauss_quad[:,:,i] = Xq;
-      Y_cords_gauss_quad[:,:,i] = Yq;
-      Z_cords_gauss_quad[:,:,i] = Zq;
-      g_aniso_quad[:,:,i] .= g_Aniso[i];
-      nEasy_quad[:,:,:,i] = repeat(nEasy_H_S[:,i],1,size(deltaX,1),size(deltaX,2));
-  end
+  X_cords_gauss_quad = repeat(-deltaX, outer=[1,1,numLenGrid])
+  Y_cords_gauss_quad = repeat(-deltaY, outer=[1,1,numLenGrid])
+  Z_cords_gauss_quad = zeros(size(deltaX,1),size(deltaX,2),numLenGrid)
 
+  # vectorized
+  g_aniso_quad = vec(permutedims(repeat(g_Aniso,outer=[1,size(deltaX,1),size(deltaX,2)]),(2,3,1)))
+  nEasy_quad = repeat(permutedims(reshape(nEasy_H_S,(size(nEasy_H_S)...,1,1)),(1,3,4,2)),outer=[1,size(deltaX,1),size(deltaX,2)])
+  nEasy_quad = reshape(nEasy_quad,3,:)
   
   # The magentic field to be evaluated
   H = hcat(GradStrx*X_cords_gauss_quad[:],GradStry*Y_cords_gauss_quad[:],GradStrz*Z_cords_gauss_quad[:]);
+  split += 1
+  idx = Int.(ceil.(range(1,size(nEasy_quad,2),split)))
+  idxS = idx[1:end-1]
+  idxE = idx[2:end].-1
+  idxE[end] = idx[end]
+  
+  Mag = zeros(size(nEasy_quad,2),3)
+  for ind in range(1,length(idxS))
+    idx = idxS[ind]:idxE[ind]
+    H_red = H[idx,:]
+    g_aniso_red = g_aniso_quad[idx]
+    nEasy_red = nEasy_quad[:,idx]
 
-  #calculated magnetic moment of the given field H
-  Mag = MNPDynamics.eqAnisoMeanMagFullVec(H, params[:DCore], MS, temp, vec(g_aniso_quad), 
-                                          reshape(nEasy_quad,3,:), order, epsilon);
+    #calculated magnetic moment of the given field H
+    Mag[idx,:] .= MNPDynamics.eqAnisoMeanMagFullVec(H_red, params[:DCore], MS, temp, g_aniso_red, 
+                                            nEasy_red, order, epsilon);
+  end
     
   Mag = reshape(Mag,size(X_cords_gauss_quad)..., 3);
 

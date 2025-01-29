@@ -38,6 +38,7 @@ p[:gradient] = Tuple(grad) .* (-spatialScaling)
 p[:DCore] = 19.0e-9 #18.4e-9 #18.402152475061616*1e-9
 p[:kAnis] = 2000 #*1800 #900#1800 #0*1835.234880285756 #1835.234880285756
 p[:kAnisγ] = 2.0
+p[:order] = 120
 p[:grid] = RegularGridPositions(collect(N), [0.034, 0.034, 0.006], calibFovCenter(bSF))
 #calibFov(bSF), calibFovCenter(bSF))
 p[:ensembleAlg] = EnsembleThreads()
