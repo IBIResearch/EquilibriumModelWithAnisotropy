@@ -1,6 +1,9 @@
-using Pkg
-Pkg.activate(".")
-Pkg.instantiate()
+# check if the script is run from the command line
+if basename(PROGRAM_FILE) == basename(@__FILE__)
+  using Pkg
+  Pkg.activate(".")
+  Pkg.instantiate()
+end
 
 using MNPDynamics
 using MPIReco

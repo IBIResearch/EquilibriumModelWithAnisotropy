@@ -1,3 +1,8 @@
+using MPIReco
+using MNPDynamics
+using FFTW
+
+
 function direction(x)
   if norm(x) == 0
     return (1.0,0.0,0.0)
@@ -5,6 +10,7 @@ function direction(x)
     return x ./ norm(x)
   end
 end
+
 
 function calcSM(params; chebyshev=false)
 
