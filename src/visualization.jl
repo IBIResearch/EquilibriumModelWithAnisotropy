@@ -1,12 +1,21 @@
-function plot2DSM(grid, smFT, MX, MY, rec; ref=nothing, showaxis=false, anisotropyAxis=nothing)
+using CairoMakie
+
+
+function plot2DSM(grid, smFT, MX, MY, rec; ref=nothing, showaxis=false, anisotropyAxis=nothing, drive_field_dividers=nothing)
 
   freqidx = Int[]
   for (iy,my) in enumerate(MY)
     for (ix,mx) in enumerate(MX)
-      ax = CairoMakie.Axis(grid[ix, iy], ylabel="", 
-          xticklabelsvisible=false, xticksvisible=false)
-
-      idx = (mx-1)*16+(my-1)*17+1
+      if isnothing(drive_field_dividers)
+        idx = (mx-1)*16+(my-1)*17+1
+      else
+        divider_gcd = gcd(drive_field_dividers[1:2]...)
+        idx = (mx-1)*(drive_field_dividers[2] / divider_gcd)+(my-1)*(drive_field_dividers[1] / divider_gcd)+1
+        idx = Int(idx)
+      end
+      if idx < 1
+        continue
+      end
       push!(freqidx, idx)
 
       c = smFT[:, :, idx, rec]
@@ -23,6 +32,8 @@ function plot2DSM(grid, smFT, MX, MY, rec; ref=nothing, showaxis=false, anisotro
 
       A = collect(transpose(ImageUtils.complexColoring(collect((c)); amax))) #
 
+      ax = CairoMakie.Axis(grid[ix, iy], ylabel="", 
+      xticklabelsvisible=false, xticksvisible=false)
       CairoMakie.heatmap!(ax, A)  
       hidedecorations!(ax, grid=false, label=false)
       tightlimits!(ax)

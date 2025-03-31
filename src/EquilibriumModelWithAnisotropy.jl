@@ -1,7 +1,8 @@
 module EquilibriumModelWithAnisotropy
 
 include("systemMatrix.jl")
+include("visualization.jl")
 
-export calcSM
+export calcSM, plot2DSM
 
 end
