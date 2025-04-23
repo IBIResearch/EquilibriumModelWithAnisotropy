@@ -30,7 +30,7 @@ function calcSM(params; chebyshev=false)
   BSM = (t, offset) -> MNPDynamics.SVector{3,Float32}(ampl[1]*cos(2*pi*freq[1]*t)+offset[1], 
                                           ampl[2]*cos(2*pi*freq[2]*t)+offset[2], 
                                           ampl[3]*cos(2*pi*freq[3]*t)+offset[3] )
-  nOffsets = shape(grid)
+
   factor = params[:kAnis]
   kAnisγ = params[:kAnisγ]
   anisotropyAxis = get(params, :anisotropyAxis, nothing)
@@ -48,14 +48,15 @@ function calcSM(params; chebyshev=false)
   params_ = copy(params)
   params_[:kAnis] = anisotropyAxis
 
-  if chebyshev
-    sm = calcSMReducedEq(params_, BSM, tSM, offsets)
-    sm .*= reshape(2*pi*im.*(0:(size(sm,3)-1)),1,1,:)
-  else
-    sm = simulationMNPMultiParams(BSM, tSM, offsets; params_...)
-    sm = rfft(reshape(permutedims(sm,(3,1,2)), nOffsets[1:2]..., :, 3), 3);
-    sm .*= reshape(2*pi*im.*(0:(size(sm,3)-1)),1,1,:) / ((size(sm,3)-1)*2)
-  end
+  @assert chebyshev == false "Chebyshev mode is not supported in this implementation."
+
+  sm = simulationMNPMultiParams(BSM, tSM, offsets; params_...)
+  squeezed_shape = filter(x -> x > 1, shape(grid))
+  signal_dim = length(squeezed_shape)+1
+  sm = reshape(permutedims(sm,(3,1,2)), squeezed_shape..., :, 3)
+  sm = rfft(sm, signal_dim);
+  sm .*= reshape(2*pi*im.*(0:(size(sm,signal_dim)-1)), [1 for _ in 1:length(squeezed_shape)]..., :) / ((size(sm,signal_dim)-1)*2)
+
   return sm
 end
 
