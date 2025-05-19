@@ -51,12 +51,13 @@ function calcSM(params; chebyshev=false)
   @assert chebyshev == false "Chebyshev mode is not supported in this implementation."
 
   sm = simulationMNPMultiParams(BSM, tSM, offsets; params_...)
-  squeezed_shape = filter(x -> x > 1, shape(grid))
-  signal_dim = length(squeezed_shape)+1
-  sm = reshape(permutedims(sm,(3,1,2)), squeezed_shape..., :, 3)
-  sm = rfft(sm, signal_dim);
-  sm .*= reshape(2*pi*im.*(0:(size(sm,signal_dim)-1)), [1 for _ in 1:length(squeezed_shape)]..., :) / ((size(sm,signal_dim)-1)*2)
-
+  if !isnothing(sm)
+    squeezed_shape = filter(x -> x > 1, shape(grid))
+    signal_dim = length(squeezed_shape)+1
+    sm = reshape(permutedims(sm,(3,1,2)), squeezed_shape..., :, 3)
+    sm = rfft(sm, signal_dim);
+    sm .*= reshape(2*pi*im.*(0:(size(sm,signal_dim)-1)), [1 for _ in 1:length(squeezed_shape)]..., :) / ((size(sm,signal_dim)-1)*2)
+  end
   return sm
 end
 
